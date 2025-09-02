@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const path = require("path");
+const fs = require("fs");
 require("dotenv").config();
 
 const app = express();
@@ -14,10 +15,20 @@ app.use(cors());
 app.use(express.json());
 
 // ---------------------- MongoDB Connection ----------------------
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("MongoDB error:", err));
+const connectMongo = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log("✅ MongoDB connected");
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err.message);
+    process.exit(1); // exit if DB cannot connect
+  }
+};
+
+connectMongo();
 
 mongoose.connection.once("open", () =>
   console.log("✅ MongoDB connection open")
@@ -67,26 +78,20 @@ const Profile = mongoose.model(
 
 // ---------------------- API ROUTES ----------------------
 
-// Optional API prefix from environment (must start with /)
-const API_PREFIX = process.env.API_PREFIX?.startsWith("/")
-  ? process.env.API_PREFIX
-  : "/api";
+// --------- User Routes ---------
 
-// ---------------- User ----------------
-
-// Signup
-app.post(`${API_PREFIX}/signup`, async (req, res) => {
+app.post("/api/signup", async (req, res) => {
   const { fullName, email, password } = req.body;
-
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ fullName, email, password: hashedPassword });
     await newUser.save();
-
-    res.status(201).json({
-      message: "User registered successfully",
-      user: { fullName, email },
-    });
+    res
+      .status(201)
+      .json({
+        message: "User registered successfully",
+        user: { fullName, email },
+      });
   } catch (err) {
     if (err.code === 11000) {
       res.status(400).json({ error: "Email already exists" });
@@ -96,10 +101,8 @@ app.post(`${API_PREFIX}/signup`, async (req, res) => {
   }
 });
 
-// Login
-app.post(`${API_PREFIX}/login`, async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const user = await User.findOne({ email });
     if (!user)
@@ -118,8 +121,7 @@ app.post(`${API_PREFIX}/login`, async (req, res) => {
   }
 });
 
-// Get user details
-app.get(`${API_PREFIX}/user`, async (req, res) => {
+app.get("/api/user", async (req, res) => {
   const { email } = req.query;
   try {
     const user = await User.findOne({ email });
@@ -130,10 +132,9 @@ app.get(`${API_PREFIX}/user`, async (req, res) => {
   }
 });
 
-// ---------------- Appointments ----------------
+// --------- Appointment Routes ---------
 
-// Get all appointments
-app.get(`${API_PREFIX}/appointments`, async (req, res) => {
+app.get("/api/appointments", async (req, res) => {
   try {
     const appointments = await Appointment.find();
     res.json(appointments);
@@ -142,8 +143,7 @@ app.get(`${API_PREFIX}/appointments`, async (req, res) => {
   }
 });
 
-// Add new appointment
-app.post(`${API_PREFIX}/appointments`, async (req, res) => {
+app.post("/api/appointments", async (req, res) => {
   try {
     const newAppointment = new Appointment(req.body);
     await newAppointment.save();
@@ -153,8 +153,7 @@ app.post(`${API_PREFIX}/appointments`, async (req, res) => {
   }
 });
 
-// Delete appointment by ID
-app.delete(`${API_PREFIX}/appointments/:id`, async (req, res) => {
+app.delete("/api/appointments/:id", async (req, res) => {
   try {
     const deleted = await Appointment.findByIdAndDelete(req.params.id);
     if (!deleted)
@@ -165,10 +164,9 @@ app.delete(`${API_PREFIX}/appointments/:id`, async (req, res) => {
   }
 });
 
-// ---------------- Profile ----------------
+// --------- Profile Routes ---------
 
-// Get latest profile
-app.get(`${API_PREFIX}/profile`, async (req, res) => {
+app.get("/api/profile", async (req, res) => {
   try {
     const profiles = await Profile.find().sort({ _id: -1 }).limit(1);
     if (profiles.length === 0)
@@ -179,12 +177,10 @@ app.get(`${API_PREFIX}/profile`, async (req, res) => {
   }
 });
 
-// Add or update profile
-app.post(`${API_PREFIX}/profile`, async (req, res) => {
+app.post("/api/profile", async (req, res) => {
   try {
     const existing = await Profile.find().sort({ _id: -1 }).limit(1);
     let result;
-
     if (existing.length > 0) {
       result = await Profile.findByIdAndUpdate(existing[0]._id, req.body, {
         new: true,
@@ -192,21 +188,26 @@ app.post(`${API_PREFIX}/profile`, async (req, res) => {
     } else {
       result = await new Profile(req.body).save();
     }
-
     res.status(200).json({ message: "Profile saved", profile: result });
   } catch (err) {
     res.status(500).json({ error: "Failed to save profile" });
   }
 });
 
-// ---------------- Serve React build ----------------
-app.use(express.static(path.join(__dirname, "../build")));
+// ---------------------- Serve React Build ----------------------
+const buildPath = path.join(__dirname, "../build");
+if (fs.existsSync(buildPath)) {
+  app.use(express.static(buildPath));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(buildPath, "index.html"));
+  });
+} else {
+  console.warn(
+    "⚠️ React build folder not found, static files will not be served"
+  );
+}
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../build/index.html"));
-});
-
-// ---------------- Start Server ----------------
+// ---------------------- Start Server ----------------------
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
