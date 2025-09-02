@@ -78,12 +78,10 @@ app.post("/api/signup", async (req, res) => {
     const newUser = new User({ fullName, email, password: hashedPassword });
     await newUser.save();
 
-    res
-      .status(201)
-      .json({
-        message: "User registered successfully",
-        user: { fullName, email },
-      });
+    res.status(201).json({
+      message: "User registered successfully",
+      user: { fullName, email },
+    });
   } catch (err) {
     if (err.code === 11000) {
       res.status(400).json({ error: "Email already exists" });
@@ -196,11 +194,13 @@ app.post("/api/profile", async (req, res) => {
   }
 });
 
-// ---------------- Serve React Frontend ----------------
-app.use(express.static(path.join(__dirname, "../public/build")));
+// Serve React build static files
+app.use(express.static(path.join(__dirname, "../build")));
+
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public/build", "index.html"));
+  res.sendFile(path.join(__dirname, "../build/index.html"));
 });
 
-// ---------------- Start Server ----------------
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
