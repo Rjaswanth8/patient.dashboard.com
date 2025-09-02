@@ -67,10 +67,15 @@ const Profile = mongoose.model(
 
 // ---------------------- API ROUTES ----------------------
 
+// Optional API prefix from environment (must start with /)
+const API_PREFIX = process.env.API_PREFIX?.startsWith("/")
+  ? process.env.API_PREFIX
+  : "/api";
+
 // ---------------- User ----------------
 
 // Signup
-app.post("/api/signup", async (req, res) => {
+app.post(`${API_PREFIX}/signup`, async (req, res) => {
   const { fullName, email, password } = req.body;
 
   try {
@@ -92,7 +97,7 @@ app.post("/api/signup", async (req, res) => {
 });
 
 // Login
-app.post("/api/login", async (req, res) => {
+app.post(`${API_PREFIX}/login`, async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -114,7 +119,7 @@ app.post("/api/login", async (req, res) => {
 });
 
 // Get user details
-app.get("/api/user", async (req, res) => {
+app.get(`${API_PREFIX}/user`, async (req, res) => {
   const { email } = req.query;
   try {
     const user = await User.findOne({ email });
@@ -128,7 +133,7 @@ app.get("/api/user", async (req, res) => {
 // ---------------- Appointments ----------------
 
 // Get all appointments
-app.get("/api/appointments", async (req, res) => {
+app.get(`${API_PREFIX}/appointments`, async (req, res) => {
   try {
     const appointments = await Appointment.find();
     res.json(appointments);
@@ -138,7 +143,7 @@ app.get("/api/appointments", async (req, res) => {
 });
 
 // Add new appointment
-app.post("/api/appointments", async (req, res) => {
+app.post(`${API_PREFIX}/appointments`, async (req, res) => {
   try {
     const newAppointment = new Appointment(req.body);
     await newAppointment.save();
@@ -149,7 +154,7 @@ app.post("/api/appointments", async (req, res) => {
 });
 
 // Delete appointment by ID
-app.delete("/api/appointments/:id", async (req, res) => {
+app.delete(`${API_PREFIX}/appointments/:id`, async (req, res) => {
   try {
     const deleted = await Appointment.findByIdAndDelete(req.params.id);
     if (!deleted)
@@ -163,7 +168,7 @@ app.delete("/api/appointments/:id", async (req, res) => {
 // ---------------- Profile ----------------
 
 // Get latest profile
-app.get("/api/profile", async (req, res) => {
+app.get(`${API_PREFIX}/profile`, async (req, res) => {
   try {
     const profiles = await Profile.find().sort({ _id: -1 }).limit(1);
     if (profiles.length === 0)
@@ -175,7 +180,7 @@ app.get("/api/profile", async (req, res) => {
 });
 
 // Add or update profile
-app.post("/api/profile", async (req, res) => {
+app.post(`${API_PREFIX}/profile`, async (req, res) => {
   try {
     const existing = await Profile.find().sort({ _id: -1 }).limit(1);
     let result;
@@ -194,13 +199,14 @@ app.post("/api/profile", async (req, res) => {
   }
 });
 
-// Serve React build static files
+// ---------------- Serve React build ----------------
 app.use(express.static(path.join(__dirname, "../build")));
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../build/index.html"));
 });
 
+// ---------------- Start Server ----------------
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
