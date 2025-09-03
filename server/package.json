@@ -1,14 +1,15 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend for Patient Dashboard",
   "main": "Server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "cd ../public && npm install && npm run build"
   },
   "keywords": [],
-  "author": "",
+  "author": "Jaswanth",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^3.0.2",
