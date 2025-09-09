@@ -711,3 +711,28 @@ tr:hover {
   margin-top: 20px;
   font-family: "Poppins", sans-serif;
 }
+
+/* Prescription start */
+
+.pres-container {
+  margin-left: 268px;
+  padding: 10px;
+}
+
+.pres-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e7e8eb;
+  padding: 20px 0px;
+}
+.pres-heading button {
+  font-size: 14px;
+  background-color: #f8debd;
+  color: #f88c00;
+  padding: 8px 10px;
+  position: relative;
+  border-radius: 5px;
+  font-weight: 600;
+  border: none;
+}

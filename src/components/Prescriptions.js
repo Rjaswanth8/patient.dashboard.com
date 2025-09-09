@@ -1,7 +1,18 @@
 function Prescriptions() {
   return (
-    <div>
-      <h2>test</h2>
+    <div className="pres-container">
+      <div className="pres-heading">
+        <h5 className="pres">Prescriptions</h5>
+        <div className="prescriptions">
+          <button>+ Prescriptions</button>
+        </div>
+      </div>
+
+      <div className="pre-popup">
+        <form>
+          <select></select>
+        </form>
+      </div>
     </div>
   );
 }
